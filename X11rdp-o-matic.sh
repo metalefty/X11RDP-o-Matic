@@ -29,9 +29,9 @@
 
 LINE="----------------------------------------------------------------------"
 # Use the canonical git repo by default
-XRDPGIT=https://github.com/neutrinolabs/xrdp.git
+XRDPGIT=https://github.com/metalefty/xrdp.git
 # Use the master branch by default
-XRDPBRANCH=master
+XRDPBRANCH=add-japanese-keylayout
 
 # Get list of available branches from remote git repository
 get_branches()
