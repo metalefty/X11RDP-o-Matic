@@ -866,7 +866,7 @@ download_compile_noninteractively()
     make_X11rdp_symbolic_link
   fi
   if [ "$XORG" == "1" ]; then
-    compile_xorg_driver_interactive
+    compile_xorg_driver_noninteractive
   fi
 
   # New method...
