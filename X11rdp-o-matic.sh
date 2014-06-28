@@ -65,6 +65,7 @@ OPTIONS
   --cleanup          : remove X11rdp / xrdp source code after installation. (Default is to keep it).
   --noinstall        : do not install anything, just build the packages
   --nox11rdp         : only build xrdp, do not build the x11rdp backend
+  --withxorg         : build xrdp xorg driver instead of x11rdp backend
   --withjpeg         : build jpeg module
                        (uses Independent JPEG Group's JPEG runtime library)
   --withturbojpeg    : build turbo jpeg module
@@ -160,6 +161,7 @@ INSTFLAG=1	# Install xrdp and x11rdp on this system
 X11RDP=1	# Build and package x11rdp
 BLEED=0		# Not bleeding-edge unless specified
 TURBOJPEG=0     # Turbo JPEG not selected by default
+XORG=0          # xorg driver is not built by default
 
 # Parse the command line for any arguments
 while [[ $# -gt 0 ]]
@@ -216,6 +218,13 @@ case "$1" in
     --nox11rdp)
       X11RDP=0
       echo "Will not build and package x11rdp"
+      echo $LINE
+    ;;
+    --withxorg)
+      X11RDP=0
+      XORG=1
+      echo "Will not build and package x11rdp"
+      echo "Will build and package xorg driver"
       echo $LINE
     ;;
     --withjpeg)
@@ -309,6 +318,67 @@ download_xrdp_noninteractive()
 {
   echo "Downloading xrdp source from the GIT repository..."
   git clone --depth 1 $XRDPGIT -b $XRDPBRANCH
+}
+
+compile_xorg_driver_interactive()
+{
+  PKGNAME=xserver-xorg-xrdp
+  if [ ! -e $WORKINGDIR/packages/Xorg ]
+  then
+    mkdir -p $WORKINGDIR/packages/Xorg
+  fi
+
+  # Step 1: Entering into xorg driver directory
+  cd $WORKINGDIR/xrdp/xorg/server
+
+  # Step 2: Use dh-make to create the debian directory package template...
+  ( dh_make --copyright mit --multi --native -p ${PKGNAME}_${VERSION} ) 2>&1 | \
+    dialog --progressbox "Preparing xrdp xorg driver source to make a Debian package..." 50 100
+
+  # Step 3: edit/configure the debian directory
+  cd debian
+  rm *.ex *.EX
+  rm README.debian
+  rm README.source
+  cp $WORKINGDIR/xrdp/readme.txt README
+
+  # Step 4: run dpkg-buildpackage to compile xrdp xorg driver and build package...
+  cd ..
+  ( dpkg-buildpackage -uc -us -tc -rfakeroot ) 2>&1 | \
+    dialog --progressbox "Building xrdp xorg driver source and packaging..." 50 100
+  cd ..
+  mv $PKGNAME $WORKINGDIR/packages/Xorg/
+}
+
+compile_xorg_driver_noninteractive()
+{
+  PKGNAME=xserver-xorg-xrdp
+
+  echo $LINE
+  echo "Preparing xrdp xorg driver source to make a Debian package..."
+  echo $LINE
+
+  if [ ! -e $WORKINGDIR/packages/Xorg ]
+  then
+    mkdir -p $WORKINGDIR/packages/Xorg
+  fi
+
+  yes | dh_make --copyright mit --multi --native -p ${PKGNAME}_${VERSION}
+
+  cd debian
+  rm *.ex *.EX
+  rm README.debian
+  rm README.source
+  cp $WORKINGDIR/xrdp/readme.txt README
+
+  echo $LINE
+  echo "Building xrdp xorg driver source and packaging..."
+  echo $LINE
+
+  cd ..
+  dpkg-buildpackage -uc -us -tc -rfakeroot
+  cd ..
+  mv $PKGNAME $WORKINGDIR/packages/Xorg/
 }
 
 compile_X11rdp_interactive()
@@ -734,6 +804,18 @@ install_generated_packages()
     echo "Please check that xrdp compiled correctly. It probably didn't."
     ERRORFOUND=1
   fi
+  FILES=($WORKINGDIR/packages/Xorg/xserver-xorg-xrdp*.deb)
+  if [ ${#FILES[@]} -gt 0 ]
+  then
+    remove_currently_installed_xrdp
+    dpkg -i $WORKINGDIR/packages/Xorg/xserver-xorg-xrdp*.deb
+  else
+    echo "I couldn't find an xrdp xorg driver Debian package to install."
+    echo "Please check that xrdp xorg driver compiled correctly. It probably didn't."
+    ERRORFOUND=1
+  fi
+
+
   if [ $ERRORFOUND == "1" ]
   then
     exit
@@ -761,6 +843,9 @@ download_compile_interactively()
     package_X11rdp_interactive
     make_X11rdp_symbolic_link
   fi
+  if [ "$XORG" == "1" ]; then
+    compile_xorg_driver_interactive
+  fi
   compile_xrdp_interactive
 }
 
@@ -779,6 +864,9 @@ download_compile_noninteractively()
     compile_X11rdp_noninteractive 
     package_X11rdp_noninteractive
     make_X11rdp_symbolic_link
+  fi
+  if [ "$XORG" == "1" ]; then
+    compile_xorg_driver_interactive
   fi
 
   # New method...
@@ -828,6 +916,18 @@ remove_currently_installed_X11rdp()
     echo "Removing the currently installed X11rdp package."
     echo $LINE
     apt-get -y remove X11rdp
+  fi
+}
+
+remove_currently_installed_xorg_driver()
+{
+  PkgName="xserver-xorg-xrdp"
+  check_package
+  if [ $PkgStatus == "2" ]
+  then
+    echo "Removing the currently installed X11rdp package."
+    echo $LINE
+    apt-get -y remove xserver-xorg-xrdp
   fi
 }
 
