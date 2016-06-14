@@ -1,7 +1,6 @@
 #!/bin/bash
 # vim:ts=2:sw=2:sts=0:number:expandtab
-set -e
-
+#
 # Automatic Xrdp/X11rdp Compiler/Installer
 # a.k.a. ScaryGliders X11rdp-O-Matic
 #
@@ -28,6 +27,28 @@ set -e
 # AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
+
+set -e
+
+trap control_c SIGINT
+
+if [ $UID -eq 0 ]
+then
+  # write to stderr 1>&2
+  echo "${0}: This utility cannot be run as root." 1>&2
+  echo 1>&2
+  echo 'This script will gain root privileges via sudo on demand, then type your password.' 1>&2
+  exit 1
+fi
+
+if ! hash sudo 2>/dev/null; then
+  # write to stderr 1>&2
+  echo "${0}: sudo not found."
+  echo 1>&2
+  echo 'This utility requires sudo to gain root privileges on demand.' 1>&2
+  echo 'run `yum -y install sudo` in root privileges before run this utility.' 1>&2
+  exit 1
+fi
 
 LINE="----------------------------------------------------------------------"
 # Use the canonical git repo by default
@@ -85,30 +106,20 @@ OPTIONS
   exit
 fi
 
-###########################################################
-# Before doing anything else, check if we're running with #
-# priveleges, because from here onwards we need to be.    #
-###########################################################
 clear
-if [ $UID -ne 0 ]
-then
-  clear
-  echo "You tried running the Scarygliders X11rdp-O-Matic installation script as a non-priveleged user. Please run as root."
-  exit 1
-fi
 
 # Install lsb_release if it's not already installed...
 if [ ! -e /usr/bin/lsb_release ]
 then
   echo "Installing the lsb_release package..."
-  apt-get -y install lsb-release
+  SUDO_CMD apt-get -y install lsb-release
 fi
 
 # Install rsync if it's not already installed...
 if [ ! -e /usr/bin/rsync ]
 then
   echo "Installing the rsync package..."
-  apt-get -y install rsync
+  SUDO_CMD apt-get -y install rsync
 fi
 
 #################################################################
@@ -133,6 +144,11 @@ dh_make_y()
   else
     echo | dh_make $@
   fi
+}
+
+SUDO_CMD() {
+  while ! sudo -v; do :; done
+  sudo $@
 }
 
 # set LANG so that dpkg etc. return the expected responses so the script is
@@ -335,7 +351,7 @@ download_xrdp_noninteractive()
 compile_X11rdp_noninteractive()
 {
   cd "$WORKINGDIR/xrdp/xorg/X11R7.6/"
-  sh buildx.sh "$X11DIR" && :
+  SUDO_CMD sh buildx.sh "$X11DIR" && :
   RC=$?
   if [ $RC -ne 0 ]; then
     echo "error building X11rdp"
@@ -394,7 +410,7 @@ compile_xrdp_noninteractive()
   fi
 
   # Step 1: Link xrdp dir to xrdp-$VERSION for dh_make to work on...
-  rsync -a --delete -- "${WORKINGDIR}/xrdp/" "${WORKINGDIR}/xrdp-${VERSION}"
+  SUDO_CMD rsync -a --delete -- "${WORKINGDIR}/xrdp/" "${WORKINGDIR}/xrdp-${VERSION}"
 
   # Step 2: Run the bootstrap and configure scripts
   cd "$WORKINGDIR/xrdp-$VERSION"
@@ -429,7 +445,7 @@ compile_xrdp_noninteractive()
 update_repositories()
 {
     echo "running apt-get update"
-    apt-get update  >& /dev/null
+    SUDO_CMD apt-get update  >& /dev/null
 }
 
 # Interrogates dpkg to find out the status of a given package name...
@@ -517,13 +533,14 @@ make_X11rdp_env()
 {
   if [ -e "$X11DIR" ] && $BUILD_X11RDP
   then
-    rm -rf "$X11DIR"
-    mkdir -p "$X11DIR"
+    SUDO_CMD rm -rf "$X11DIR"
+    SUDO_CMD mkdir -p "$X11DIR"
   fi
 
   if [ -e "$WORKINGDIR/xrdp" ]
   then
-    rm -rf "$WORKINGDIR/xrdp"
+    # TODO: create working directory each time
+    SUDO_CMD rm -rf "$WORKINGDIR/xrdp"
   fi
 }
 
@@ -587,7 +604,7 @@ install_generated_packages()
     if [ ${#FILES[@]} -gt 0 ]
     then
       remove_currently_installed_X11rdp
-      dpkg -i "$WORKINGDIR"/packages/x11rdp/x11rdp*.deb
+      SUDO_CMD dpkg -i "$WORKINGDIR"/packages/x11rdp/x11rdp*.deb
     else
       ERRORFOUND=1
       echo "We were supposed to have built X11rdp but I couldn't find a package file."
@@ -598,7 +615,7 @@ install_generated_packages()
   if [ ${#FILES[@]} -gt 0 ]
   then
     remove_currently_installed_xrdp
-    dpkg -i "$WORKINGDIR"/packages/xrdp/xrdp*.deb
+    SUDO_CMD dpkg -i "$WORKINGDIR"/packages/xrdp/xrdp*.deb
   else
     echo "I couldn't find an xrdp Debian package to install."
     echo "Please check that xrdp compiled correctly. It probably didn't."
@@ -628,16 +645,16 @@ download_compile_noninteractively()
 
   alter_xrdp_source # Patches the downloaded source
 
+  # New method...
+  # Compiles & packages using dh_make and dpkg-buildpackage
+  compile_xrdp_noninteractive
+
   if $BUILD_X11RDP
   then
     compile_X11rdp_noninteractive
     package_X11rdp_noninteractive
     make_X11rdp_symbolic_link
   fi
-
-  # New method...
-  # Compiles & packages using dh_make and dpkg-buildpackage
-  compile_xrdp_noninteractive
 }
 
 remove_existing_generated_packages()
@@ -666,7 +683,7 @@ remove_currently_installed_xrdp()
   then
     echo "Removing the currently installed xrdp package."
     echo $LINE
-    apt-get -y remove xrdp
+    SUDO_CMD apt-get -y remove xrdp
   fi
 }
 
@@ -677,7 +694,7 @@ remove_currently_installed_X11rdp()
   then
     echo "Removing the currently installed X11rdp package."
     echo $LINE
-    apt-get -y remove X11rdp
+    SUDO_CMD apt-get -y remove X11rdp
   fi
 }
 
@@ -773,8 +790,6 @@ check_for_opt_directory
 # Figure out what version number to use for the debian packages
 calculate_version_num
 
-# trap keyboard interrupt (control-c)
-trap control_c SIGINT
 
 if $BUILD_X11RDP
 then
@@ -830,9 +845,9 @@ else # Install the packages on the system
   # stop xrdp if running
   if $USING_SYSTEMD
   then
-    systemctl stop xrdp || :
+    SUDO_CMD systemctl stop xrdp || :
   else
-    service xrdp stop || :
+    SUDO_CMD service xrdp stop || :
   fi
 
   install_generated_packages
