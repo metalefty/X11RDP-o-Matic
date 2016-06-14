@@ -208,7 +208,7 @@ PARALLELMAKE=true   # Utilise all available CPU's for compilation by default.
 CLEANUP=false       # Keep the x11rdp and xrdp sources by default - to remove
                     # requires --cleanup command line switch
 INSTALL_XRDP=true   # Install xrdp and x11rdp on this system
-BUILD_XRDP=true     # Build and package x11rdp
+BUILD_X11RDP=true   # Build and package x11rdp
 BLEED=false         # Not bleeding-edge unless specified
 USE_TURBOJPEG=false # Turbo JPEG not selected by default
 
@@ -265,7 +265,7 @@ case "$1" in
     echo $LINE
     ;;
   --nox11rdp)
-    BUILD_XRDP=false
+    BUILD_X11RDP=false
     echo "Will not build and package x11rdp"
     echo $LINE
     ;;
@@ -515,7 +515,7 @@ calculate_version_num()
 # place all the built binaries and files.
 make_X11rdp_env()
 {
-  if [ -e "$X11DIR" ] && $BUILD_XRDP
+  if [ -e "$X11DIR" ] && $BUILD_X11RDP
   then
     rm -rf "$X11DIR"
     mkdir -p "$X11DIR"
@@ -581,7 +581,7 @@ install_generated_packages()
 {
   ERRORFOUND=0
 
-  if $BUILD_XRDP
+  if $BUILD_X11RDP
   then
     FILES=("$WORKINGDIR"/packages/x11rdp/x11rdp*.deb)
     if [ ${#FILES[@]} -gt 0 ]
@@ -628,7 +628,7 @@ download_compile_noninteractively()
 
   alter_xrdp_source # Patches the downloaded source
 
-  if $BUILD_XRDP
+  if $BUILD_X11RDP
   then
     compile_X11rdp_noninteractive
     package_X11rdp_noninteractive
@@ -776,7 +776,7 @@ calculate_version_num
 # trap keyboard interrupt (control-c)
 trap control_c SIGINT
 
-if $BUILD_XRDP
+if $BUILD_X11RDP
 then
   echo " *** Will remove the contents of $X11DIR and $WORKINGDIR/xrdp-$VERSION ***"
   echo
@@ -812,7 +812,7 @@ if ! $INSTALL_XRDP # If not installing on this system...
 then
   # this is stupid but some Makefiles from X11rdp don't have an uninstall target (ex: Python!)
   # ... so instead of not installing X11rdp we remove it in the end
-  if $BUILD_XRDP # If we compiled X11rdp then remove the generated X11rdp files (from /opt)
+  if $BUILD_X11RDP # If we compiled X11rdp then remove the generated X11rdp files (from /opt)
   then
     rm -rf "$X11DIR"
   fi
