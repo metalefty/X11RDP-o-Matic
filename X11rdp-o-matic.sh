@@ -96,6 +96,10 @@ GIT_USE_HTTPS=true  # Use firewall-friendry https:// instead of git:// to fetch 
 apt-cache search ^libtool-bin | grep -q libtool-bin && \
   REQUIREDPACKAGES+=(libtool-bin) XRDP_BUILD_DEPENDS+=(libtool-bin) X11RDP_BUILD_DEPENDS+=(libtool-bin)
 
+# add apt-utils if found in repository
+apt-cache search ^apt-utils$ | grep -q ^apt-utils && \
+  META_DEPENDS+=(apt-utils)
+
 #############################################
 # Common function declarations begin here...#
 #############################################
