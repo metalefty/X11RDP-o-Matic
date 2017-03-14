@@ -55,6 +55,11 @@ LINE="----------------------------------------------------------------------"
 : ${GH_PROJECT:=xrdp}
 : ${GH_BRANCH:=master}
 GH_URL=https://github.com/${GH_ACCOUNT}/${GH_PROJECT}.git
+# xorgxrdp repository
+: ${GH_ACCOUNT_xorgxrdp:=neutrinolabs}
+: ${GH_PROJECT_xorgxrdp:=xorgxrdp}
+: ${GH_BRANCH_xorgxrdp:=master}
+GH_URL_xorgxrdp=https://github.com/${GH_ACCOUNT_xorgxrdp}/${GH_PROJECT_xorgxrdp}.git
 
 # working directories and logs
 WRKDIR=$(mktemp --directory --suffix .X11RDP-o-Matic)
@@ -343,7 +348,9 @@ OPTIONS
 clone()
 {
   local CLONE_DEST="${WRKDIR}/xrdp"
-  echo -n 'Cloning source code... '
+  local CLONE_DEST_xorgxrdp="${CLONE_DEST}/xorgxrdp"
+
+  echo -n 'Cloning xrdp source code... '
 
   if [ ! -d "$CLONE_DEST" ]; then
     if $GIT_USE_HTTPS; then
@@ -356,6 +363,21 @@ clone()
     # if commit hash specified, use it
     if [ -n "${GH_COMMIT}" ]; then
       (cd $CLONE_DEST && git reset --hard "${GH_COMMIT}" ) >> $BUILD_LOG 2>&1 || error_exit
+    fi
+    echo 'done'
+  else
+    echo 'already exists'
+  fi
+
+  echo -n 'Cloning xorgxrdp source code... '
+  if [ ! -d "$CLONE_DEST_xorgxrdp" ]; then
+    git clone ${GH_URL_xorgxrdp} --branch ${GH_BRANCH_xorgxrdp} ${CLONE_DEST_xorgxrdp} \
+      >> $BUILD_LOG 2>&1 || error_exit
+
+    # if commit hash specified, use it
+    if [ -n "${GH_COMMIT_xorgxrdp}" ]; then
+      (cd ${CLONE_DEST_xorgxrdp} && git reset --hard "${GH_COMMIT_xorgxrdp}" \
+        >> $BUILD_LOG 2>&1 || error_exit)
     fi
     echo 'done'
   else
