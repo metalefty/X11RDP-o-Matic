@@ -103,7 +103,7 @@ apt-cache search ^libtool-bin | grep -q libtool-bin && \
 
 # add apt-utils if found in repository
 apt-cache search ^apt-utils$ | grep -q ^apt-utils && \
-  META_DEPENDS+=(apt-utils)
+  META_DEPENDS=(apt-utils "${META_DEPENDS[@]}")
 
 #############################################
 # Common function declarations begin here...#
