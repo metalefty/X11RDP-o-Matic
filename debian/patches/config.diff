@@ -1,39 +1,49 @@
-# DP: config patches for Debian
-# DP: move -logfile /dev/null to last, for easy commenting out
-
+diff --git a/sesman/sesman.ini b/sesman/sesman.ini
+index 8225ee44..2c41dbc1 100644
 --- a/sesman/sesman.ini
 +++ b/sesman/sesman.ini
-@@ -88,8 +88,7 @@ param=-noreset
- param=-ac
+@@ -54,12 +54,13 @@ LogLevel=DEBUG
+ EnableSyslog=1
+ SyslogLevel=DEBUG
+
+-[X11rdp]
+-param=X11rdp
+-param=-bs
++[Xorg]
++param=Xorg
++param=-config
++param=xrdp/xorg.conf
++param=-noreset
  param=-nolisten
  param=tcp
+-param=-uds
+
+ [Xvnc]
+ param=Xvnc
+@@ -70,16 +71,6 @@ param=-localhost
+ param=-dpi
+ param=96
+
+-[Xorg]
+-param=Xorg
+-param=-config
+-param=xrdp/xorg.conf
+-param=-noreset
+-param=-nolisten
+-param=tcp
 -param=-logfile
--param=/dev/null
-+param=-retro
- 
+-param=.xorgxrdp.%s.log
+-
  [Chansrv]
- # drive redirection, defaults to xrdp_client if not set
---- a/xorgxrdp/xrdpdev/xorg.conf
-+++ b/xorgxrdp/xrdpdev/xorg.conf
-@@ -12,10 +12,9 @@ Section "ServerFlags"
- EndSection
- 
- Section "Files"
--    FontPath "/usr/X11R6/lib/X11/fonts/misc/:unscaled"
--    FontPath "/usr/X11R6/lib/X11/fonts/75dpi/:unscaled"
--    FontPath "/usr/X11R6/lib/X11/fonts/100dpi/:unscaled"
--    FontPath "/usr/X11R6/lib/X11/fonts/viewtouch"
-+    FontPath "/usr/share/fonts/X11/misc/:unscaled"
-+    FontPath "/usr/share/fonts/X11/75dpi/:unscaled"
-+    FontPath "/usr/share/fonts/X11/100dpi/:unscaled"
- EndSection
- 
- Section "Module"
+ ; drive redirection, defaults to xrdp_client if not set
+ FuseMountName=thinclient_drives
+diff --git a/xrdp/xrdp.ini b/xrdp/xrdp.ini
+index fd421e35..92d73163 100644
 --- a/xrdp/xrdp.ini
 +++ b/xrdp/xrdp.ini
-@@ -144,16 +144,6 @@ tcutils=true
- # for debugging xrdp, add following line to section xrdp1
- # chansrvport=/tmp/.xrdp/xrdp_chansrv_socket_7210
+@@ -148,16 +148,6 @@ tcutils=true
+ ; Session types
+ ;
 
 -[X11rdp]
 -name=X11rdp
@@ -48,21 +58,3 @@
  [Xorg]
  name=Xorg
  lib=libxup.so
-@@ -164,6 +154,16 @@ port=-1
- xserverbpp=24
- code=20
-
-+[X11rdp]
-+name=X11rdp
-+lib=libxup.so
-+username=ask
-+password=ask
-+ip=127.0.0.1
-+port=-1
-+xserverbpp=24
-+code=10
-+
- [Xvnc]
- name=Xvnc
- lib=libvnc.so
-

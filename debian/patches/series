@@ -1,5 +1,3 @@
 make-fixes.diff
 config.diff
 systemd.diff
-fix_perms.diff
-sockpath.diff

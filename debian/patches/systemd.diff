@@ -1,49 +1,32 @@
-# DP: systemd service files for Debian
-
+diff --git a/instfiles/xrdp-sesman.service b/instfiles/xrdp-sesman.service
+index ff8d5b0c..c92e7ea7 100644
 --- a/instfiles/xrdp-sesman.service
 +++ b/instfiles/xrdp-sesman.service
-@@ -1,12 +1,12 @@
- [Unit]
--Description=xrdp session manager
--After=syslog.target network.target
--StopWhenUnneeded=true
--BindTo=xrdp.service
-+Description=xrdp (X Remote Desktop Protocol) session manager
-+Documentation=man:xrdp-sesman(8)  man:sesman.ini(5)
-+Requires=xrdp.service
-+After=network.target xrdp.service
- 
+@@ -7,7 +7,8 @@ BindsTo=xrdp.service
+
  [Service]
  Type=forking
 -PIDFile=/var/run/xrdp-sesman.pid
 +PIDFile=/run/xrdp/xrdp-sesman.pid
++RuntimeDirectory=xrdp
  EnvironmentFile=-/etc/sysconfig/xrdp
  EnvironmentFile=-/etc/default/xrdp
  ExecStart=/usr/sbin/xrdp-sesman $SESMAN_OPTIONS
+diff --git a/instfiles/xrdp.service b/instfiles/xrdp.service
+index ccf07c73..2e20e784 100644
 --- a/instfiles/xrdp.service
 +++ b/instfiles/xrdp.service
-@@ -1,15 +1,20 @@
- [Unit]
--Description=xrdp daemon
--Requires=xrdp-sesman.service
--After=syslog.target network.target xrdp-sesman.service
-+Description=xrdp (X Remote Desktop Protocol) protocol server
-+Documentation=man:xrdp(8) man:xrdp.ini(5)
-+After=network.target
- 
+@@ -6,9 +6,12 @@ After=network.target xrdp-sesman.service
+
  [Service]
  Type=forking
 -PIDFile=/var/run/xrdp.pid
 +PIDFile=/run/xrdp/xrdp.pid
++RuntimeDirectory=xrdp
  EnvironmentFile=-/etc/sysconfig/xrdp
  EnvironmentFile=-/etc/default/xrdp
 +User=xrdp
 +Group=xrdp
-+PermissionsStartOnly=true
-+ExecStartPre=/bin/sh /usr/share/xrdp/socksetup
  ExecStart=/usr/sbin/xrdp $XRDP_OPTIONS
  ExecStop=/usr/sbin/xrdp $XRDP_OPTIONS --kill
-+ExecStopPost=/bin/rm -rf /var/run/xrdp/sockdir
- 
- [Install]
- WantedBy=multi-user.target
+
