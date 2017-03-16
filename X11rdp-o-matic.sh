@@ -76,7 +76,7 @@ META_DEPENDS=(lsb-release rsync git build-essential dh-make wget gdebi)
 XRDP_CONFIGURE_ARGS=(--prefix=/usr --sysconfdir=/etc --localstatedir=/var --enable-fuse --enable-jpeg --enable-opus)
 XRDP_BUILD_DEPENDS=(debhelper autoconf automake dh-systemd libfuse-dev libjpeg-dev libopus-dev libpam0g-dev libssl-dev libtool libx11-dev libxfixes-dev libxrandr-dev pkg-config)
 X11RDP_BUILD_DEPENDS=(autoconf automake libtool flex bison python-libxml2 libxml2-dev gettext intltool xsltproc make gcc g++ xutils-dev xutils)
-XORGXRDP_BUILD_DEPENDS=(automake autoconf libtool pkg-config nasm xserver-xorg-dev)
+XORGXRDP_BUILD_DEPENDS=(automake autoconf libtool pkg-config nasm xserver-xorg-dev x11-utils)
 
 ARCH=$(dpkg --print-architecture)
 RELEASE=1 # release number for debian packages
