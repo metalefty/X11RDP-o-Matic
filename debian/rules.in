@@ -6,6 +6,8 @@ DEB_BUILD_MAINT_OPTIONS=hardening=+all
 DPKG_EXPORT_BUILDFLAGS:=1
 include /usr/share/dpkg/default.mk
 
+export PKG_CONFIG_PATH=${CURDIR}/pkgconfig
+
 # this is precisely what dh_auto_configure does
 CONFIGURE_ARGS:=	--build=${DEB_BUILD_GNU_TYPE} \
 			--prefix=/usr \
@@ -24,23 +26,56 @@ ifneq (${DEB_BUILD_GNU_TYPE},${DEB_HOST_GNU_TYPE})
 CONFIGURE_ARGS+=	--host=${DEB_HOST_GNU_TYPE}
 endif
 
+ifeq (i386,${DEB_HOST_ARCH_CPU})
+# The following files must be rewritten to use PIC if -DPIC is passed:
+# - librfxcodec/src/x86/rfxcodec_encode_dwt_shift_x86_sse2.asm
+# - librfxcodec/src/x86/rfxcodec_encode_dwt_shift_x86_sse41.asm
+# - xorgxrdp/module/x86/a8r8g8b8_to_a8b8g8r8_box_x86_sse2.asm
+# - xorgxrdp/module/x86/a8r8g8b8_to_nv12_box_x86_sse2.asm
+# - xorgxrdp/module/x86/i420_to_rgb32_x86_sse2.asm
+# - xorgxrdp/module/x86/uyvy_to_rgb32_x86_sse2.asm
+# - xorgxrdp/module/x86/yuy2_to_rgb32_x86_sse2.asm
+# - xorgxrdp/module/x86/yv12_to_rgb32_x86_sse2.asm
+# Documentation: http://www.nasm.us/doc/nasmdoc9.html#section-9.2
+# Unfortunately, this requires reserving the EBX register, which
+# is used extensively by this code; to avoid crashes or security
+# issues in xrdp, we disable the code on any-i386 for stretch and
+# will revisit this later and with upstream; amd64 isn’t affected
+# (as it uses RIP-relative addressing), x32 and other architectures
+# don’t use the assembly code at all.
+# When fixed, change Build-Depends’ nasm component to:
+# nasm [amd64 hurd-i386 i386 kfreebsd-amd64 kfreebsd-i386],
+CONFIGURE_ARGS+=	--without-simd
+endif
+
 ifeq (x32,${DEB_HOST_ARCH})
 # autodetection fails on x32 (wrongly recognised as amd64)
 CONFIGURE_ARGS+=	--without-simd
 endif
 
+ifeq (hurd,${DEB_HOST_ARCH_OS})
+# fuse_lowlevel.h is not yet usable
+CONFIGURE_ARGS+=	--disable-fuse
+endif
+
 %:
-	dh $@ --with systemd
+	dh $@
 
 override_dh_auto_configure:
 	./bootstrap
-	if [ -f librfxcodec/Makefile ]; then : ; fi
-	if [ -f librfxcodec/bootstrap ]; then cd librfxcodec && ./bootstrap && \
-	    ./configure ${CONFIGURE_ARGS} \
-	        --disable-shared \
-	        --enable-static ; fi
-	if [ -f xorgxrdp/bootstrap ]; then  cd xorgxrdp && ./bootstrap && ./configure ${CONFIGURE_ARGS}; fi
-	./configure ${CONFIGURE_ARGS} %%XRDP_CONFIGURE_ARGS%%
+	cd xorgxrdp && ./bootstrap
+	cd librfxcodec && ./bootstrap
+	./configure %%XRDP_CONFIGURE_ARGS%% ${CONFIGURE_ARGS}
+	cd xorgxrdp && ./configure \
+	    ${CONFIGURE_ARGS}
+	cd librfxcodec && ./configure \
+	    --disable-shared \
+	    --enable-static \
+	    ${CONFIGURE_ARGS}
+	cd libpainter && ./configure \
+	    --disable-shared \
+	    --enable-static \
+	    ${CONFIGURE_ARGS}
 	find . -name Makefile -print0 | \
 	    xargs -0 perl -pi -e 's!XRDP_PID_PATH.*?/run!$$&/xrdp!g' --
 
@@ -58,6 +93,10 @@ override_dh_auto_install:
 	mkdir -p debian/xorgxrdp/etc debian/xorgxrdp/usr/lib
 	mv debian/xrdp/etc/X11 debian/xorgxrdp/etc/
 	mv debian/xrdp/usr/lib/xorg debian/xorgxrdp/usr/lib/
+
+override_dh_installchangelogs:
+	dh_installchangelogs -pxrdp -- NEWS.md
+	dh_installchangelogs --remaining-packages
 
 override_dh_installinit:
 	dh_installinit --no-restart-on-upgrade
@@ -77,3 +116,7 @@ override_dh_gencontrol:
 	    sed 's/, /\n/g' | sort -u | \
 	    perl -0e 'print join(", ", split(/\n/, <>));')"
 	dh_gencontrol
+
+override_dh_clean:
+	dh_clean
+	chmod +x xorgxrdp/tests/xorg-test-run.sh
