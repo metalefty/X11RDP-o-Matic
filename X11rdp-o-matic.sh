@@ -118,7 +118,7 @@ SUDO_CMD()
   echo "Following command will be executed via sudo:" | tee -a $SUDO_LOG 1>&2
   echo "	$@" | tee -a $SUDO_LOG 1>&2
   while ! sudo -v; do :; done
-  sudo $@ | tee -a $SUDO_LOG
+  sudo DEBIAN_FRONTEND=noninteractive $@ | tee -a $SUDO_LOG
   return ${PIPESTATUS[0]}
 }
 
