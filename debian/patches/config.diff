@@ -37,24 +37,3 @@ index 8225ee44..2c41dbc1 100644
  [Chansrv]
  ; drive redirection, defaults to xrdp_client if not set
  FuseMountName=thinclient_drives
-diff --git a/xrdp/xrdp.ini b/xrdp/xrdp.ini
-index fd421e35..92d73163 100644
---- a/xrdp/xrdp.ini
-+++ b/xrdp/xrdp.ini
-@@ -148,16 +148,6 @@ tcutils=true
- ; Session types
- ;
-
--[X11rdp]
--name=X11rdp
--lib=libxup.so
--username=ask
--password=ask
--ip=127.0.0.1
--port=-1
--xserverbpp=24
--code=10
--
- [Xorg]
- name=Xorg
- lib=libxup.so
