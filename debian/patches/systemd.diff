@@ -13,10 +13,10 @@ index ff8d5b0c..c92e7ea7 100644
  EnvironmentFile=-/etc/default/xrdp
  ExecStart=/usr/sbin/xrdp-sesman $SESMAN_OPTIONS
 diff --git a/instfiles/xrdp.service b/instfiles/xrdp.service
-index ccf07c73..2e20e784 100644
+index 590502fb..d3575b88 100644
 --- a/instfiles/xrdp.service
 +++ b/instfiles/xrdp.service
-@@ -6,9 +6,12 @@ After=network.target xrdp-sesman.service
+@@ -6,10 +6,13 @@ After=network.target xrdp-sesman.service
 
  [Service]
  Type=forking
@@ -25,8 +25,9 @@ index ccf07c73..2e20e784 100644
 +RuntimeDirectory=xrdp
  EnvironmentFile=-/etc/sysconfig/xrdp
  EnvironmentFile=-/etc/default/xrdp
+ PermissionsStartOnly=true
 +User=xrdp
 +Group=xrdp
+ ExecStartPre=/bin/sh /usr/share/xrdp/socksetup
  ExecStart=/usr/sbin/xrdp $XRDP_OPTIONS
  ExecStop=/usr/sbin/xrdp $XRDP_OPTIONS --kill
-
