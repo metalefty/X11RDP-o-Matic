@@ -503,6 +503,9 @@ alter_xrdp_source()
 {
   cd "$WRKDIR"
 
+  # install systemd files
+  cp ${BASEDIR}/files/*.service ${WRKDIR}/xrdp/instfiles/
+
   # Patch rdp Makefile
   patch -b -d "$WRKDIR/xrdp/xorg/X11R7.6/rdp" Makefile < "$PATCHDIR/rdp_Makefile.patch" >> $BUILD_LOG  || error_exit
 
