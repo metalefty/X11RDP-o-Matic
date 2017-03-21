@@ -65,7 +65,8 @@ override_dh_auto_configure:
 	./bootstrap
 	cd xorgxrdp && ./bootstrap
 	cd librfxcodec && ./bootstrap
-	./configure %%XRDP_CONFIGURE_ARGS%% ${CONFIGURE_ARGS}
+	./configure %%XRDP_CONFIGURE_ARGS%% ${CONFIGURE_ARGS} \
+	    --with-socketdir=/var/run/xrdp/socket
 	cd xorgxrdp && ./configure \
 	    ${CONFIGURE_ARGS}
 	cd librfxcodec && ./configure \
