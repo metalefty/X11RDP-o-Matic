@@ -434,7 +434,7 @@ compile_xrdp()
   # cp -r "${BASEDIR}/debian/"patches debian/
   #
   cp COPYING debian/copyright
-  cp readme.txt debian/README
+  cp README.md debian/README
   sed -e "s|%%XRDP_CONFIGURE_ARGS%%|${XRDP_CONFIGURE_ARGS[*]}|g" \
        "${BASEDIR}/debian/rules.in" > debian/rules
   chmod 0755 debian/rules
@@ -465,7 +465,7 @@ bran_new_calculate_version_num()
   clone
   local _PWD=$PWD
   cd ${WRKDIR}/xrdp || error_exit
-  local _XRDP_VERSION=$(grep xrdp readme.txt| head -1 | cut -d ' ' -f 2)
+  local _XRDP_VERSION=$(<${WRKDIR}/xrdp/configure.ac grep ^AC_INIT | sed -e 's|AC_INIT(\[\(.*\)\], \[\(.*\)\], \[\(.*\)\])|\2|')
   local _XRDP_BRANCH=$(git rev-parse --abbrev-ref HEAD)
   # hack for git 2.1.x
   # in latest git, this can be written: git log -1 --date=format:%Y%m%d --format="~%cd+git%h" .
