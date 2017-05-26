@@ -454,7 +454,7 @@ utilize_all_cpus()
   Cores=$(nproc)
   if [ $Cores -gt 1 ]
   then
-    sed -i -e "s/make -C/make -j ${Cores}/g" "${WRKDIR}/xrdp/xorg/X11R7.6/buildx.sh"
+    sed -i -e "s/make -C/make -j ${Cores} -C/g" "${WRKDIR}/xrdp/xorg/X11R7.6/buildx.sh"
   fi
 }
 
